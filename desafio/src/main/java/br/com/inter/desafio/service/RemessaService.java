@@ -1,15 +1,11 @@
 package br.com.inter.desafio.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponents;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import br.com.inter.desafio.dto.Cliente;
 import br.com.inter.desafio.dto.Cotacao;
@@ -22,6 +18,8 @@ import br.com.inter.desafio.repository.CarteiraFisicaRepository;
 import br.com.inter.desafio.repository.CarteiraJuridicaRepository;
 import br.com.inter.desafio.repository.PessoaFisicaRepository;
 import br.com.inter.desafio.repository.PessoaJuridicaRepository;
+import jakarta.transaction.Transactional;
+import jakarta.transaction.Transactional.TxType;
 
 /**
  * Classe responsavel por implementar as regras de negocio da remessa 
@@ -30,6 +28,8 @@ import br.com.inter.desafio.repository.PessoaJuridicaRepository;
  */
 @Service
 public class RemessaService extends ServiceBase {
+
+	private static final int HTTP_CODE_SUCESSO = 200;
 
 	private static final String PESSOA_FISICA = "PF";
 	
@@ -56,19 +56,22 @@ public class RemessaService extends ServiceBase {
 	 * @param Remessa remessa
 	 * @return String 
 	 */
+	@Transactional(value = TxType.REQUIRED)
 	public String efetuarRemessa(Remessa remessa) {
 		
 		Cliente depositante = enriquecerDepositante(remessa);
 		Cliente beneficiario = enriquecerBeneficiario(remessa);
 		
+		BigDecimal cotacaoDia = obterCotacao();
+		BigDecimal valorBase = new BigDecimal(remessa.getValor().replace(",", "."));
+		remessa.setValorConvertido(valorBase.divide(cotacaoDia,RoundingMode.HALF_UP));
+		
+		
 		debitar(remessa, depositante);
 		creditar(remessa, beneficiario);
 		
-		
-		BigDecimal cotacaoDia = obterCotacao();
-		
-		
-		return "OK";
+				
+		return "Operação Efetuada com sucesso";
 	}
 
 	/**
@@ -80,17 +83,14 @@ public class RemessaService extends ServiceBase {
 	@SuppressWarnings("deprecation")
 	private BigDecimal obterCotacao() {
 		BigDecimal cotacaoDecimal = new BigDecimal(0);
-		RestTemplate restTemplate= new RestTemplate();
-				
+		
 		String url = "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarDia(dataCotacao=@dataCotacao)?@dataCotacao='"
 				+ "05-10-2023" //TODO : mudar para a data atual
 				+ "'&$top=10&$skip=0&$format=json&$select=cotacaoCompra";
 		
-		UriComponents builder = UriComponentsBuilder.fromHttpUrl(url).build();		
-		HttpEntity<String> request = new HttpEntity<>(null);//header
-		ResponseEntity<String> response = restTemplate.exchange(builder.toUriString(), HttpMethod.GET, request, String.class);
+		ResponseEntity<String> response = executarRequisicaoGet(url, null);
 		
-		if(response.getStatusCodeValue()==200 ) {				
+		if(response.getStatusCodeValue()==HTTP_CODE_SUCESSO ) {				
 			Cotacao cotacao = gson.fromJson(response.getBody(), Cotacao.class);
 			if(cotacao != null) {							
 				cotacaoDecimal = new BigDecimal(cotacao.getValue().get(0).getCotacaoCompra().toString());				
@@ -101,7 +101,6 @@ public class RemessaService extends ServiceBase {
 		}
 		return cotacaoDecimal;
 	}
-	
 	
 	/**
 	 * Metodo responsavel por enriquecer os dados do beneficiaro
@@ -120,8 +119,8 @@ public class RemessaService extends ServiceBase {
 			beneficiarioPF = pfRepository.buscarPessoaFisicaPorCPF(remessa.getBeneficiario());
 
 			carteiraBeneficiarioPF.setPessoaFisica(beneficiarioPF);
-			carteiraBeneficiarioPF.setMoeda(remessa.getMoeda());
-			carteiraBeneficiarioPF = carteiraPfRepository.buscarCarteiraPessoaFisica(beneficiarioPF, remessa.getMoeda());
+			carteiraBeneficiarioPF.setMoeda("DOLAR");
+			carteiraBeneficiarioPF = carteiraPfRepository.buscarCarteiraPessoaFisica(beneficiarioPF, carteiraBeneficiarioPF.getMoeda());
 			
 			beneficiario.setPessoaFisica(beneficiarioPF);
 			beneficiario.setCarteiraPF(carteiraBeneficiarioPF);
@@ -131,8 +130,8 @@ public class RemessaService extends ServiceBase {
 			beneficiarioPJ = pjRepository.buscarPessoaJuridicaPorCNPJ(remessa.getBeneficiario());
 				
 			carteiraBeneficiarioPJ.setPessoaJuridica(beneficiarioPJ);
-			carteiraBeneficiarioPJ.setMoeda(remessa.getMoeda());
-			carteiraBeneficiarioPJ = carteiraPjRepository.buscarCarteiraPessoaJuridica(beneficiarioPJ, remessa.getMoeda());
+			carteiraBeneficiarioPJ.setMoeda("DOLAR");
+			carteiraBeneficiarioPJ = carteiraPjRepository.buscarCarteiraPessoaJuridica(beneficiarioPJ, carteiraBeneficiarioPJ.getMoeda());
 			
 			beneficiario.setPessoaJuridica(beneficiarioPJ);
 			beneficiario.setCarteiraPJ(carteiraBeneficiarioPJ);
@@ -158,8 +157,8 @@ public class RemessaService extends ServiceBase {
 			depositantePF = pfRepository.buscarPessoaFisicaPorCPF(remessa.getDepositante());
 			
 			carteiraDepositantePF.setPessoaFisica(depositantePF);
-			carteiraDepositantePF.setMoeda(remessa.getMoeda());
-			carteiraDepositantePF = carteiraPfRepository.buscarCarteiraPessoaFisica(depositantePF, remessa.getMoeda());
+			carteiraDepositantePF.setMoeda("REAL");
+			carteiraDepositantePF = carteiraPfRepository.buscarCarteiraPessoaFisica(depositantePF, carteiraDepositantePF.getMoeda());
 			
 			depositante.setPessoaFisica(depositantePF);
 			depositante.setCarteiraPF(carteiraDepositantePF);
@@ -169,8 +168,8 @@ public class RemessaService extends ServiceBase {
 			depositantePJ = pjRepository.buscarPessoaJuridicaPorCNPJ(remessa.getDepositante());
 			
 			carteiraDepositantePJ.setPessoaJuridica(depositantePJ);
-			carteiraDepositantePJ.setMoeda(remessa.getMoeda());
-			carteiraDepositantePJ = carteiraPjRepository.buscarCarteiraPessoaJuridica(depositantePJ, remessa.getMoeda());
+			carteiraDepositantePJ.setMoeda("REAL");
+			carteiraDepositantePJ = carteiraPjRepository.buscarCarteiraPessoaJuridica(depositantePJ, carteiraDepositantePJ.getMoeda());
 			
 			depositante.setPessoaJuridica(depositantePJ);
 			depositante.setCarteiraPJ(carteiraDepositantePJ);
@@ -186,15 +185,15 @@ public class RemessaService extends ServiceBase {
 	 * @param Remessa remessa, Cliente beneficiario
 	 */
 	public void debitar(Remessa remessa, Cliente depositante) {
+		BigDecimal valorBase = new BigDecimal(remessa.getValor().replace(",", "."));
 		BigDecimal valorAtual = new BigDecimal(0);
-		BigDecimal valorADebitar = new BigDecimal(remessa.getValor().replace(",", "."));
 		
 		if(depositante.getTipoPessoa().equals(PESSOA_FISICA)) {
-			valorAtual = depositante.getCarteiraPF().getValor().subtract(valorADebitar);
+			valorAtual = depositante.getCarteiraPF().getValor().subtract(valorBase);
 			depositante.getCarteiraPF().setValor(valorAtual);
 			carteiraPfRepository.save(depositante.getCarteiraPF());
 		}else {
-			valorAtual = depositante.getCarteiraPJ().getValor().subtract(valorADebitar);
+			valorAtual = depositante.getCarteiraPJ().getValor().subtract(valorBase);
 			depositante.getCarteiraPJ().setValor(valorAtual);
 			carteiraPjRepository.save(depositante.getCarteiraPJ());
 		}		
@@ -207,14 +206,13 @@ public class RemessaService extends ServiceBase {
 	 */
 	public void creditar(Remessa remessa, Cliente beneficiario) {
 		BigDecimal valorAtual = new BigDecimal(0);
-		BigDecimal valorADebitar = new BigDecimal(remessa.getValor().replace(",", "."));
 		
 		if(beneficiario.getTipoPessoa().equals(PESSOA_FISICA)) {
-			valorAtual = beneficiario.getCarteiraPF().getValor().add(valorADebitar);
+			valorAtual = beneficiario.getCarteiraPF().getValor().add(remessa.getValorConvertido());
 			beneficiario.getCarteiraPF().setValor(valorAtual);
 			carteiraPfRepository.save(beneficiario.getCarteiraPF());
 		}else {
-			valorAtual = beneficiario.getCarteiraPJ().getValor().add(valorADebitar);
+			valorAtual = beneficiario.getCarteiraPJ().getValor().add(remessa.getValorConvertido());
 			beneficiario.getCarteiraPJ().setValor(valorAtual);
 			carteiraPjRepository.save(beneficiario.getCarteiraPJ());
 		}				

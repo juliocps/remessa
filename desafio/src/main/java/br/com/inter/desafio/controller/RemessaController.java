@@ -19,6 +19,9 @@ import br.com.inter.desafio.service.RemessaService;
 @RequestMapping("/remessa")
 public class RemessaController extends ControllerBase {
 	
+	private static final int TAMANHO_CNPJ = 14;
+	private static final int TAMANHO_CPF = 11;
+	private static final int TAMANHO_CENTAVOS = 2;
 	@Autowired
 	RemessaService remessaService;
 	
@@ -32,6 +35,7 @@ public class RemessaController extends ControllerBase {
     @PostMapping(produces = "application/json;charset=UTF-8")
     public Retorno efetuarRemessa(@RequestBody Entrada dto) {
 		Retorno retorno = new Retorno();
+		String PATH_WS = "/remessa/post";
          try {
         	 log.info("Iniciando uma Remessa as :" + getDataHora().toString());
         	 
@@ -39,10 +43,11 @@ public class RemessaController extends ControllerBase {
         	 
         	 if(msgErro.isEmpty()) {   
         		 String resultado = remessaService.efetuarRemessa(dto.getRemessa());
-        		 retorno = montarMensagemSucesso(resultado, resultado);
+        		 retorno = montarMensagemSucesso(PATH_WS, resultado);
         	 }else {        		 
         		 log.info("Falha na remessa :" + msgErro);
-        		 retorno = montarMensagemErro("/remessa/post", msgErro);
+        		 
+				retorno = montarMensagemErro(PATH_WS, msgErro);
         		 log.info("Finalizando a remessa as:" + getDataHora().toString());
         	 } 
         	 
@@ -80,7 +85,7 @@ public class RemessaController extends ControllerBase {
    			 if(dto.getRemessa().getBeneficiario().isEmpty()) {
    				 msgErro.append("O Beneficiario da Remessa não pode ser nulo ou vazio.");
    			 }else {
-   				if(dto.getRemessa().getBeneficiario().length() == 11 || dto.getRemessa().getBeneficiario().length() == 14) { //não faz nada  					
+   				if(dto.getRemessa().getBeneficiario().length() == TAMANHO_CPF || dto.getRemessa().getBeneficiario().length() == TAMANHO_CNPJ) { //não faz nada  					
    				}else {
    					msgErro.append("CPF ou CNPJ do beneficiário está incorreto.");
    				}
@@ -91,7 +96,7 @@ public class RemessaController extends ControllerBase {
    			 if(dto.getRemessa().getDepositante().isEmpty()) {
    				 msgErro.append("O Depositante da Remessa não pode ser nulo ou vazio.");
    			 }else {
-   				if(dto.getRemessa().getDepositante().length() == 11 || dto.getRemessa().getDepositante().length() == 14) { //não faz nada  					
+   				if(dto.getRemessa().getDepositante().length() == TAMANHO_CPF || dto.getRemessa().getDepositante().length() == TAMANHO_CNPJ) { //não faz nada  					
    				}else {
    					msgErro.append("CPF ou CNPJ do depositante está incorreto.");
    				}
@@ -114,7 +119,7 @@ public class RemessaController extends ControllerBase {
    					msgErro.append("O Valor da Remessa deve ser informado com os centavos.");
    				}else {
    					String[] vetorValor = dto.getRemessa().getValor().split(",");
-   					if(vetorValor[1].length() != 2) {
+   					if(vetorValor[1].length() != TAMANHO_CENTAVOS) {
    						msgErro.append("O Valor da Remessa deve ser informado com duas casas após a virgula.");
    					}
    					

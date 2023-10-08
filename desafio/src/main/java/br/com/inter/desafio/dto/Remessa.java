@@ -1,5 +1,7 @@
 package br.com.inter.desafio.dto;
 
+import java.math.BigDecimal;
+
 /**
  * DTO responsavel por mapear um operação de remessa
  * @author julio.silva
@@ -10,7 +12,7 @@ public class Remessa {
 	private String beneficiario;
 	private String moeda;
 	private String valor;
-	 
+	private BigDecimal valorConvertido;
 	
 	public String getDepositante() {
 		return depositante;
@@ -35,6 +37,12 @@ public class Remessa {
 	}
 	public void setValor(String valor) {
 		this.valor = valor;
+	}
+	public BigDecimal getValorConvertido() {
+		return valorConvertido;
+	}
+	public void setValorConvertido(BigDecimal valorConvertido) {
+		this.valorConvertido = valorConvertido;
 	}
 
 }
