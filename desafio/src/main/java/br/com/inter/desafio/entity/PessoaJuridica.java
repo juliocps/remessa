@@ -1,17 +1,27 @@
 package br.com.inter.desafio.entity;
 
+import java.util.List;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
+/**
+ * Entidade que representa a Pessoa Juridica 
+ * @author julio.silva
+ */
 @Entity
 @Table(name="pessoa_juridica")
 public class PessoaJuridica extends Pessoa{
 
 	private String cnpj;
+	
+	@OneToMany(mappedBy = "pessoaJuridica")
+    private List<CarteiraFisica> listaCarteira;
 
 	@Column(length = 14, nullable = false)
 	public String getCnpj() {

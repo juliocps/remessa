@@ -1,5 +1,9 @@
 package br.com.inter.desafio.entity;
 
+/**
+ * Entidade Pessoa com os campos comum entre pessoa fisica e pessoa juridica. 
+ * @author julio.silva
+ */
 public class Pessoa extends EntityBase {
 	
 	protected String nome;

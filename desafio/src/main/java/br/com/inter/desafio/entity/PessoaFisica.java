@@ -1,18 +1,28 @@
 package br.com.inter.desafio.entity;
 
+import java.util.List;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
+/**
+ * Entidade que representa a Pessoa Fisica 
+ * @author julio.silva
+ */
 @Entity
 @Table(name="pessoa_fisica")
 public class PessoaFisica extends Pessoa {
 	
 	private String cpf;
 	private String sobrenome;
+	
+	@OneToMany(mappedBy = "pessoaFisica")
+    private List<CarteiraFisica> listaCarteira;
 
 	@Column(length = 11, nullable = false)
 	public String getCpf() {
