@@ -68,7 +68,7 @@ public class RemessaService extends ServiceBase {
 	 * @throws ParseException 
 	 * @throws CotacaoException 
 	 */
-	@Transactional(value = TxType.REQUIRED)
+	@Transactional(value = TxType.REQUIRED, rollbackOn = {Exception.class, NegocioException.class, ParseException.class})
 	public String efetuarRemessa(Remessa remessa) throws NegocioException, ParseException, CotacaoException {
 		
 		Cliente depositante = enriquecerDepositante(remessa);
@@ -78,13 +78,9 @@ public class RemessaService extends ServiceBase {
 		BigDecimal valorBase = new BigDecimal(remessa.getValor().replace(",", "."));
 		remessa.setValorConvertido(valorBase.divide(cotacaoDia,RoundingMode.HALF_UP));
 		
-		
-		
-		
 		debitar(remessa, depositante, beneficiario.getTipoPessoa());
 		creditar(remessa, beneficiario);
-		
-				
+					
 		return "Operação Efetuada com sucesso";
 	}
 
@@ -337,9 +333,10 @@ public class RemessaService extends ServiceBase {
 	 * Metodo responsavel por creditar o valor na conta do beneficiario
 	 * para realizar a remessa
 	 * @param Remessa remessa, Cliente beneficiario
+	 * @throws NegocioException 
 	 */
 	public void creditar(Remessa remessa, Cliente beneficiario) {
-		BigDecimal valorAtual = new BigDecimal(0);
+		BigDecimal valorAtual = new BigDecimal(0);	
 		
 		if(beneficiario.getTipoPessoa().equals(PESSOA_FISICA)) {
 			valorAtual = beneficiario.getCarteiraPF().getValor().add(remessa.getValorConvertido());
@@ -349,6 +346,6 @@ public class RemessaService extends ServiceBase {
 			valorAtual = beneficiario.getCarteiraPJ().getValor().add(remessa.getValorConvertido());
 			beneficiario.getCarteiraPJ().setValor(valorAtual);
 			carteiraPjRepository.save(beneficiario.getCarteiraPJ());
-		}				
+		}			
 	}
 }

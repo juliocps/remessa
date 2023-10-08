@@ -1,7 +1,7 @@
 package br.com.inter.desafio.excecao;
 
 /**
- * Classe responsavel por tratar exceções de regra de negocio
+ * Classe responsavel por tratar excecoes da integracao com a api de cotacao
  * @author Júlio Silva
  *
  */
