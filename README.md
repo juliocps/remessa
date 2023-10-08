@@ -13,7 +13,7 @@ Ambos possuem carteira em Real e em Dólar e realizam remessa entre eles.
 ##### Requisitos:
 **Requisito Funcional:** Deverá ser criado uma API RESTFul que fará uma remessa entre os usuários. Uma remessa constitui de uma operação de conversão de moeda de Real para Dólar e depois de uma operação de transferência do valor convertido.
 
-**Critérios de Aceite: ** 
+**Critérios de Aceite:** 
 
 1 -  A cotação da moeda deverá ser consultada através da API publica
 
