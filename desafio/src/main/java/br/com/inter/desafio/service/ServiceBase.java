@@ -1,5 +1,8 @@
 package br.com.inter.desafio.service;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +27,14 @@ public class ServiceBase {
 	@Autowired
 	public Gson gson;
 	
+	public Date dataAtual = new Date();				
+	public SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy"); 
+	
+	/**
+	 * Metodo responsavel realizar uma requisicao get em um endpoint rest
+	 * @param String url, HttpHeaders header
+	 * @return ResponseEntity
+	 */
 	protected ResponseEntity<String> executarRequisicaoGet(String url, HttpHeaders header) {
 		RestTemplate restTemplate= new RestTemplate();		
 		UriComponents builder = UriComponentsBuilder.fromHttpUrl(url).build();		

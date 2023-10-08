@@ -2,6 +2,8 @@ package br.com.inter.desafio.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.ParseException;
+import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +16,7 @@ import br.com.inter.desafio.entity.CarteiraFisica;
 import br.com.inter.desafio.entity.CarteiraJuridica;
 import br.com.inter.desafio.entity.PessoaFisica;
 import br.com.inter.desafio.entity.PessoaJuridica;
+import br.com.inter.desafio.excecao.NegocioException;
 import br.com.inter.desafio.repository.CarteiraFisicaRepository;
 import br.com.inter.desafio.repository.CarteiraJuridicaRepository;
 import br.com.inter.desafio.repository.PessoaFisicaRepository;
@@ -55,9 +58,11 @@ public class RemessaService extends ServiceBase {
 	 * ( debitar de uma conta e creditar em outra conta )
 	 * @param Remessa remessa
 	 * @return String 
+	 * @throws NegocioException 
+	 * @throws ParseException 
 	 */
 	@Transactional(value = TxType.REQUIRED)
-	public String efetuarRemessa(Remessa remessa) {
+	public String efetuarRemessa(Remessa remessa) throws NegocioException, ParseException {
 		
 		Cliente depositante = enriquecerDepositante(remessa);
 		Cliente beneficiario = enriquecerBeneficiario(remessa);
@@ -65,6 +70,8 @@ public class RemessaService extends ServiceBase {
 		BigDecimal cotacaoDia = obterCotacao();
 		BigDecimal valorBase = new BigDecimal(remessa.getValor().replace(",", "."));
 		remessa.setValorConvertido(valorBase.divide(cotacaoDia,RoundingMode.HALF_UP));
+		
+		
 		
 		
 		debitar(remessa, depositante);
@@ -145,8 +152,9 @@ public class RemessaService extends ServiceBase {
 	 * para realizar a remessa
 	 * @param Remessa remessa
 	 * @return String 
+	 * @throws ParseException 
 	 */
-	private Cliente enriquecerDepositante(Remessa remessa) {
+	private Cliente enriquecerDepositante(Remessa remessa) throws ParseException {
 		Cliente depositante = new Cliente();
 		PessoaFisica depositantePF = new PessoaFisica();
 		PessoaJuridica depositantePJ = new PessoaJuridica();				
@@ -160,6 +168,12 @@ public class RemessaService extends ServiceBase {
 			carteiraDepositantePF.setMoeda("REAL");
 			carteiraDepositantePF = carteiraPfRepository.buscarCarteiraPessoaFisica(depositantePF, carteiraDepositantePF.getMoeda());
 			
+			//Regra Negocio : PF’s possuem um limite de 10 mil reais transacionados por dia.
+			atualizaDataUltimaTransacaoPF(carteiraDepositantePF);				
+			if(carteiraDepositantePF.getAcumuladoDia() == null) {
+				carteiraDepositantePF.setAcumuladoDia(new BigDecimal(0));
+			}
+			
 			depositante.setPessoaFisica(depositantePF);
 			depositante.setCarteiraPF(carteiraDepositantePF);
 			depositante.setTipoPessoa(PESSOA_FISICA);
@@ -171,6 +185,12 @@ public class RemessaService extends ServiceBase {
 			carteiraDepositantePJ.setMoeda("REAL");
 			carteiraDepositantePJ = carteiraPjRepository.buscarCarteiraPessoaJuridica(depositantePJ, carteiraDepositantePJ.getMoeda());
 			
+			//Regra de Negocio: PJ’s possuem um limite de 50 mil reais transacionados por dia.
+			atualizaDataUltimaTransacaoPJ(carteiraDepositantePJ);
+			if(carteiraDepositantePF.getAcumuladoDia() == null) {
+				carteiraDepositantePF.setAcumuladoDia(new BigDecimal(0));
+			}
+			
 			depositante.setPessoaJuridica(depositantePJ);
 			depositante.setCarteiraPJ(carteiraDepositantePJ);
 			depositante.setTipoPessoa(PESSOA_JURIDICA);
@@ -178,24 +198,76 @@ public class RemessaService extends ServiceBase {
 		}
 		return depositante;
 	}
+
+	/**
+	 * Metodo responsavel validar a data da ultima transacao e atualizar data e limite para validar o limite diario
+	 * @param CarteiraFisica carteiraDepositantePF
+	 */
+	private void atualizaDataUltimaTransacaoPF(CarteiraFisica carteiraDepositantePF) throws ParseException {
+		if(carteiraDepositantePF.getUltimaTransacao() != null ){				
+						
+			Date dataBanco = sdf.parse(sdf.format(carteiraDepositantePF.getUltimaTransacao())); 
+			Date hoje = sdf.parse(sdf.format(dataAtual)); 
+							            
+			if(dataBanco.before(hoje)){
+				carteiraDepositantePF.setUltimaTransacao(new Date());
+				carteiraDepositantePF.setAcumuladoDia(new BigDecimal(0));
+			}					            
+		}else {				
+			carteiraDepositantePF.setUltimaTransacao(new Date());
+		}
+	}
+	
+	/**
+	 * Metodo responsavel validar a data da ultima transacao e atualizar data e limite para validar o limite diario
+	 * @param CarteiraJuridica carteiraDepositantePJ
+	 */
+	private void atualizaDataUltimaTransacaoPJ(CarteiraJuridica carteiraDepositantePJ) throws ParseException {
+		if(carteiraDepositantePJ.getUltimaTransacao() != null ){				
+			
+			Date dataBanco = sdf.parse(sdf.format(carteiraDepositantePJ.getUltimaTransacao())); 
+			Date hoje = sdf.parse(sdf.format(dataAtual)); 
+							            
+			if(dataBanco.before(hoje)){
+				carteiraDepositantePJ.setUltimaTransacao(new Date());
+				carteiraDepositantePJ.setAcumuladoDia(new BigDecimal(0));
+			}					            
+		}else {				
+			carteiraDepositantePJ.setUltimaTransacao(new Date());
+		}
+	}
 	
 	/**
 	 * Metodo responsavel debitar o valor na conta do depositante
 	 * para realizar a remessa
 	 * @param Remessa remessa, Cliente beneficiario
+	 * @throws NegocioException 
 	 */
-	public void debitar(Remessa remessa, Cliente depositante) {
+	public void debitar(Remessa remessa, Cliente depositante) throws NegocioException {
 		BigDecimal valorBase = new BigDecimal(remessa.getValor().replace(",", "."));
 		BigDecimal valorAtual = new BigDecimal(0);
 		
 		if(depositante.getTipoPessoa().equals(PESSOA_FISICA)) {
-			valorAtual = depositante.getCarteiraPF().getValor().subtract(valorBase);
-			depositante.getCarteiraPF().setValor(valorAtual);
-			carteiraPfRepository.save(depositante.getCarteiraPF());
+			
+			//Regra de Negocio : Validar se o usuário tem saldo antes da remessa.
+			if(depositante.getCarteiraPF().getValor().doubleValue() >  valorBase.doubleValue()) {
+				valorAtual = depositante.getCarteiraPF().getValor().subtract(valorBase);
+				depositante.getCarteiraPF().setValor(valorAtual);
+				carteiraPfRepository.save(depositante.getCarteiraPF());				
+			}else {
+				 throw new NegocioException("O depositante ( "+ depositante.getPessoaFisica().getNome() +" ) não tem saldo para realizar a remessa de "+ valorBase.doubleValue());
+			}
+			
 		}else {
-			valorAtual = depositante.getCarteiraPJ().getValor().subtract(valorBase);
-			depositante.getCarteiraPJ().setValor(valorAtual);
-			carteiraPjRepository.save(depositante.getCarteiraPJ());
+			//Regra de Negocio : Validar se o usuário tem saldo antes da remessa.
+			if(depositante.getCarteiraPJ().getValor().doubleValue() > valorBase.doubleValue()) {
+				valorAtual = depositante.getCarteiraPJ().getValor().subtract(valorBase);
+				depositante.getCarteiraPJ().setValor(valorAtual);
+				carteiraPjRepository.save(depositante.getCarteiraPJ());
+			}else {
+				throw new NegocioException("O depositante ( "+ depositante.getPessoaJuridica().getNome() +" ) não tem saldo para realizar a remessa de "+ valorBase.doubleValue());
+			}
+			
 		}		
 	}
 	

@@ -1,5 +1,10 @@
 package br.com.inter.desafio.dto;
 
+/**
+ * DTO complementar para conversão do json retornado pela api da cotacao
+ * @author Júlio Silva
+ *
+ */
 public class Value{
 	
 	private Double cotacaoCompra;

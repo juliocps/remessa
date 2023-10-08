@@ -1,6 +1,9 @@
 package br.com.inter.desafio.entity;
 
 import java.math.BigDecimal;
+import java.util.Date;
+
+import org.springframework.format.annotation.DateTimeFormat;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -46,6 +49,19 @@ public class CarteiraFisica extends Carteira{
 		return valor;
 	}
 
+	@Override
+	@Column(length = 50)
+	public BigDecimal getAcumuladoDia() {
+		return acumuladoDia;
+	}
+	
+	@Override
+	@Column()
+	@DateTimeFormat(pattern = "dd/MM/yyyy")
+	public Date getUltimaTransacao() {
+		return ultimaTransacao;
+	}
+	
 	@ManyToOne
     @JoinColumn(name = "pessoaFisica" )
 	public PessoaFisica getPessoaFisica() {

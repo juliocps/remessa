@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import br.com.inter.desafio.dto.Entrada;
 import br.com.inter.desafio.dto.Retorno;
+import br.com.inter.desafio.excecao.NegocioException;
 import br.com.inter.desafio.service.RemessaService;
 
 /**
@@ -45,17 +46,17 @@ public class RemessaController extends ControllerBase {
         		 String resultado = remessaService.efetuarRemessa(dto.getRemessa());
         		 retorno = montarMensagemSucesso(PATH_WS, resultado);
         	 }else {        		 
-        		 log.info("Falha na remessa :" + msgErro);
-        		 
-				retorno = montarMensagemErro(PATH_WS, msgErro);
-        		 log.info("Finalizando a remessa as:" + getDataHora().toString());
+        		log.info("Falha na validação da remessa :" + msgErro);        		 
+				retorno = montarMensagemErro(PATH_WS, msgErro);	 
         	 } 
         	 
-        	 
+        	 log.info("Finalizando a remessa as:" + getDataHora().toString());
         	 return retorno;
+         } catch(NegocioException e) {           
+             return montarMensagemErro(PATH_WS, e.getMessage());
          } catch(Exception e) {
-             log.error(e.getMessage());
-             return null;
+             e.printStackTrace();
+             return montarMensagemErro(PATH_WS, "Ocorreu um erro inesperado! Entre em contato com o administrador do sistema.");
          }
     }
 
