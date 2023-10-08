@@ -46,8 +46,11 @@ public class RemessaController extends ControllerBase {
         	 
         	 String msgErro =  validarRemessa(dto);
         	 
+        	 
         	 if(msgErro.isEmpty()) { 
-        		 log.debug("Remessa (" + buscarIdRequisicao(dataAtual) + ") DE: " + dto.getRemessa().getDepositante() + " PARA: "
+        		 log.info("Auditoria da Remessa: " + buscarIdRequisicao(dataAtual) + " | Responsavel: " + dto.getResponsavel() + " | Data de envio:" + dto.getDataEvento());
+        		 
+        		 log.info("Remessa (" + buscarIdRequisicao(dataAtual) + ") DE: " + dto.getRemessa().getDepositante() + " PARA: "
         				 + dto.getRemessa().getBeneficiario() + " NO VALOR DE: " + dto.getRemessa().getValor());
         		 
         		 String resultado = remessaService.efetuarRemessa(dto.getRemessa());
@@ -115,15 +118,7 @@ public class RemessaController extends ControllerBase {
    				if(!dto.getRemessa().getDepositante().matches("[0-9]*")) {
    					msgErro.append("CPF ou CNPJ do depositante deve conter apenas número.");
    				}
-   			 }
-   			 if(dto.getRemessa().getMoeda().isEmpty()) {
-   				 msgErro.append("A Moeda da Remessa não pode ser nula ou vazia.");
-   			 }else {
-   				 if(dto.getRemessa().getMoeda().equals("DOLAR") || dto.getRemessa().getMoeda().equals("REAL")) { //não faz nada 
-   				 }else {
-   					msgErro.append("A Moeda da Remessa não é aceita.");
-   				 }
-   			 }
+   			 }  			 
    			 if(dto.getRemessa().getValor().isEmpty()) {
    				 msgErro.append("O Valor da Remessa não pode ser nulo ou vazio.");
    			 }else {
