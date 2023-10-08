@@ -123,6 +123,10 @@ http://localhost:8080/swagger-ui/index.html
 
 Monitoramento com Pinpoint API
 
+Teste de Integração
+
+Teste de Stress
+
 Docker
 
 
