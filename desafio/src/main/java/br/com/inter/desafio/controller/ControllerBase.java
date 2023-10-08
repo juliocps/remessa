@@ -4,6 +4,7 @@ package br.com.inter.desafio.controller;
 
 
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.slf4j.Logger;
@@ -30,12 +31,12 @@ public class ControllerBase {
 	
 	@Autowired
 	public Gson gson;
-	
-	@DateTimeFormat(pattern = "dd/MM/yyyy HH:mm")
-    private Date dataHora = new Date();
-
-	public Date getDataHora() {
-		return dataHora;
+		
+	public String buscarIdRequisicao(Date dataAtual) {			
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss"); 
+		String dataTexto = sdf.format(dataAtual);
+		dataTexto = dataTexto.replace("/", "");
+		return dataTexto;
 	}
 	
 	/**

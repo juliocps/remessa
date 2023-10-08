@@ -77,10 +77,10 @@ public class RemessaService extends ServiceBase {
 		BigDecimal cotacaoDia = obterCotacao();
 		BigDecimal valorBase = new BigDecimal(remessa.getValor().replace(",", "."));
 		remessa.setValorConvertido(valorBase.divide(cotacaoDia,RoundingMode.HALF_UP));
-		
-		debitar(remessa, depositante, beneficiario.getTipoPessoa());
+				
+		debitar(remessa, depositante, beneficiario.getTipoPessoa());				
 		creditar(remessa, beneficiario);
-					
+			
 		return "Operação Efetuada com sucesso";
 	}
 
@@ -278,7 +278,7 @@ public class RemessaService extends ServiceBase {
 			}else {//Regra de Negocio 01
 				 throw new NegocioException("O depositante ( "+ depositante.getPessoaFisica().getNome() +" ) não tem saldo para realizar a remessa de "+ valorBase.doubleValue());
 			}
-			
+			log.debug("Debito de: " + valorBase + " na carteira do cleinte: "+ depositante.getPessoaFisica().getCpf());
 		}else {
 			//Regra de Negocio 01: Validar se o usuário tem saldo antes da remessa.
 			if(depositante.getCarteiraPJ().getValor().doubleValue() > valorBase.doubleValue()) {
@@ -301,7 +301,8 @@ public class RemessaService extends ServiceBase {
 					
 			}else {//Regra de Negocio 01:
 				throw new NegocioException("O depositante ( "+ depositante.getPessoaJuridica().getNome() +" ) não tem saldo para realizar a remessa de "+ valorBase.doubleValue());
-			}		
+			}	
+			log.debug("Debito de: " + valorBase + " na carteira do cleinte: "+ depositante.getPessoaJuridica().getCnpj());
 		}		
 	}
 
@@ -342,10 +343,12 @@ public class RemessaService extends ServiceBase {
 			valorAtual = beneficiario.getCarteiraPF().getValor().add(remessa.getValorConvertido());
 			beneficiario.getCarteiraPF().setValor(valorAtual);
 			carteiraPfRepository.save(beneficiario.getCarteiraPF());
+			log.debug("Credito de: " + remessa.getValorConvertido() + " na carteira do cleinte: "+ beneficiario.getPessoaFisica().getNome());
 		}else {
 			valorAtual = beneficiario.getCarteiraPJ().getValor().add(remessa.getValorConvertido());
 			beneficiario.getCarteiraPJ().setValor(valorAtual);
 			carteiraPjRepository.save(beneficiario.getCarteiraPJ());
+			log.debug("Credito de: " + remessa.getValorConvertido() + " na carteira do cleinte: "+ beneficiario.getPessoaFisica().getNome());
 		}			
 	}
 }

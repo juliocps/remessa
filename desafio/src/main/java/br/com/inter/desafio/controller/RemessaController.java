@@ -1,5 +1,7 @@
 package br.com.inter.desafio.controller;
 
+import java.util.Date;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,27 +40,33 @@ public class RemessaController extends ControllerBase {
     public Retorno efetuarRemessa(@RequestBody Entrada dto) {
 		Retorno retorno = new Retorno();
 		String PATH_WS = "/remessa/post";
+		Date dataAtual = new Date();
          try {
-        	 log.info("Iniciando uma Remessa as :" + getDataHora().toString());
+        	 log.info("Iniciando a Remessa: " + buscarIdRequisicao(dataAtual));
         	 
         	 String msgErro =  validarRemessa(dto);
         	 
-        	 if(msgErro.isEmpty()) {   
+        	 if(msgErro.isEmpty()) { 
+        		 log.debug("Remessa (" + buscarIdRequisicao(dataAtual) + ") DE: " + dto.getRemessa().getDepositante() + " PARA: "
+        				 + dto.getRemessa().getBeneficiario() + " NO VALOR DE: " + dto.getRemessa().getValor());
+        		 
         		 String resultado = remessaService.efetuarRemessa(dto.getRemessa());
         		 retorno = montarMensagemSucesso(PATH_WS, resultado);
-        	 }else {        		 
-        		log.info("Falha na validação da remessa :" + msgErro);        		 
+        	 }else {  
+        		log.info("Falha na validação da Remessa (" + buscarIdRequisicao(dataAtual) + ") | Mensagem: " + msgErro);        		 
 				retorno = montarMensagemErro(PATH_WS, msgErro);	 
         	 } 
         	 
-        	 log.info("Finalizando a remessa as:" + getDataHora().toString());
+        	 log.info("Finalizando a Remessa: " + buscarIdRequisicao(dataAtual));
         	 return retorno;
-         } catch(NegocioException e) {           
+         } catch(NegocioException e) {  
+        	 log.error("Erro na Remessa (" + buscarIdRequisicao(dataAtual) + ") | ERRO (NegocioException): " + e.getMessage());     
              return montarMensagemErro(PATH_WS, e.getMessage());
-         }catch(CotacaoException e) {           
+         }catch(CotacaoException e) {  
+        	 log.error("Erro na Remessa (" + buscarIdRequisicao(dataAtual) + ") | ERRO (CotacaoException): " + e.getMessage());
              return montarMensagemErro(PATH_WS, e.getMessage());
          }catch(Exception e) {
-             e.printStackTrace();
+             e.printStackTrace();            
              return montarMensagemErro(PATH_WS, "Ocorreu um erro inesperado! Entre em contato com o administrador do sistema.");
          }
     }
