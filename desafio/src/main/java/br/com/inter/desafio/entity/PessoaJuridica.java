@@ -23,7 +23,7 @@ public class PessoaJuridica extends Pessoa{
 	@OneToMany(mappedBy = "pessoaJuridica")
     private List<CarteiraFisica> listaCarteira;
 
-	@Column(length = 14, nullable = false)
+	@Column(length = 14, nullable = false, unique = true)
 	public String getCnpj() {
 		return cnpj;
 	}
@@ -47,7 +47,7 @@ public class PessoaJuridica extends Pessoa{
 	}
 		
 	@Override
-	@Column(length = 100, nullable = false)
+	@Column(length = 100, nullable = false, unique = true)
 	public String getEmail() {
 		return email;
 	}

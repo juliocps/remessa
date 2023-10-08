@@ -3,9 +3,16 @@ package br.com.inter.desafio.service;
 import java.math.BigDecimal;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import br.com.inter.desafio.dto.Cliente;
+import br.com.inter.desafio.dto.Cotacao;
 import br.com.inter.desafio.dto.Remessa;
 import br.com.inter.desafio.entity.CarteiraFisica;
 import br.com.inter.desafio.entity.CarteiraJuridica;
@@ -57,7 +64,42 @@ public class RemessaService extends ServiceBase {
 		debitar(remessa, depositante);
 		creditar(remessa, beneficiario);
 		
+		
+		BigDecimal cotacaoDia = obterCotacao();
+		
+		
 		return "OK";
+	}
+
+	/**
+	 * Metodo responsavel por buscar a cotacao do dia para remessa em dolar
+	 * para realizar a remessa
+	 * @param Remessa remessa
+	 * @return String 
+	 */
+	@SuppressWarnings("deprecation")
+	private BigDecimal obterCotacao() {
+		BigDecimal cotacaoDecimal = new BigDecimal(0);
+		RestTemplate restTemplate= new RestTemplate();
+				
+		String url = "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarDia(dataCotacao=@dataCotacao)?@dataCotacao='"
+				+ "05-10-2023" //TODO : mudar para a data atual
+				+ "'&$top=10&$skip=0&$format=json&$select=cotacaoCompra";
+		
+		UriComponents builder = UriComponentsBuilder.fromHttpUrl(url).build();		
+		HttpEntity<String> request = new HttpEntity<>(null);//header
+		ResponseEntity<String> response = restTemplate.exchange(builder.toUriString(), HttpMethod.GET, request, String.class);
+		
+		if(response.getStatusCodeValue()==200 ) {				
+			Cotacao cotacao = gson.fromJson(response.getBody(), Cotacao.class);
+			if(cotacao != null) {							
+				cotacaoDecimal = new BigDecimal(cotacao.getValue().get(0).getCotacaoCompra().toString());				
+			}
+		}else {
+			//TODO : levantar exceção
+			
+		}
+		return cotacaoDecimal;
 	}
 	
 	

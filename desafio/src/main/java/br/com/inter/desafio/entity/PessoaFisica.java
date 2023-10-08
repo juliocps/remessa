@@ -24,7 +24,7 @@ public class PessoaFisica extends Pessoa {
 	@OneToMany(mappedBy = "pessoaFisica")
     private List<CarteiraFisica> listaCarteira;
 
-	@Column(length = 11, nullable = false)
+	@Column(length = 11, nullable = false, unique = true)
 	public String getCpf() {
 		return cpf;
 	}
@@ -49,7 +49,7 @@ public class PessoaFisica extends Pessoa {
 	
 	
 	@Override
-	@Column(length = 300, nullable = false)
+	@Column(length = 300, nullable = false, unique = true)
 	public String getEmail() {
 		return email;
 	}

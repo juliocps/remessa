@@ -8,7 +8,10 @@ import java.util.Date;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+
+import com.google.gson.Gson;
 
 import br.com.inter.desafio.dto.Retorno;
 import lombok.extern.log4j.Log4j;
@@ -24,6 +27,9 @@ public class ControllerBase {
 	private static final String HTTP_CODE_SUCESSO = "200";
 
 	public final Logger log = LoggerFactory.getLogger(getClass());
+	
+	@Autowired
+	public Gson gson;
 	
 	@DateTimeFormat(pattern = "dd/MM/yyyy HH:mm")
     private Date dataHora = new Date();

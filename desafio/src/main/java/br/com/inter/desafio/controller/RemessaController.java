@@ -7,8 +7,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.google.gson.Gson;
-
 import br.com.inter.desafio.dto.Entrada;
 import br.com.inter.desafio.dto.Retorno;
 import br.com.inter.desafio.service.RemessaService;
@@ -24,8 +22,6 @@ public class RemessaController extends ControllerBase {
 	@Autowired
 	RemessaService remessaService;
 	
-	@Autowired
-	Gson gson;
 	
 	/**
 	 * Metodo responsavel por expor o endpoint da remessa
