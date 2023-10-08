@@ -48,54 +48,83 @@ Obs.: utilizar o campo “cotacaoCompra” da resposta da API.
 ### Tecnologias utilizadas
 
 Springboot
+
 H2 Database
+
 OpenAI
+
 Jmeter
+
 Postman
+
 
 ------------
 ### Inicialização
 
 1 - Clonar o projeto no github e abrir no Spring Tools Suite 4
+
 2 - Clicar com o botão direito no projeto desafio
+
 3 - Clicar em Maven
+
 4 - Clicar em Update Project
+
 5 - Clicar com o botão direito no projeto desafio
+
 6 - Clicar em Run as..
+
 7 - Clicar em Maven Install
+
 8 - Acessar aba Boot Dashboard
+
 9 - Dentro de local selecionar o projeto desafio
+
 10 - Clicar em start
+
 
 Ou
 
+
 1 - Acessar o seu maven via linha de comandos
+
 2 - Executar o comando mvn install na pasta do projeto
+
 3 - Executar o comando  java -jar desafio-0.0.1-SNAPSHOT.jar
+
 
 ###### Rodandos os testes
 
 Usando IDE:
+
 1 - Clicar com o botão direito no projeto desafio
+
 2 - Clicar em Run as..
+
 3 - Clicar em Maven Test
+
 
 Usando o Maven externo:
 1 - Acessar o seu maven via linha de comandos
+
 2 - Executar o comando mvn test na pasta do projeto
+
 
 ###### Para acessar a documentação da API
 
 1- Inicie a aplicação e acesse os links abaixo:
 
 http://localhost:8080/api-docs
+
 http://localhost:8080/swagger-ui/index.html
+
 
 ------------
 ### Implementações futuras
 
 Monitoramento com Pinpoint API
+
 Docker
+
 
 ------------
 ### Colaboradores
