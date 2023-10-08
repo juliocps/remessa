@@ -81,7 +81,7 @@ public class RemessaService extends ServiceBase {
 		
 		
 		
-		debitar(remessa, depositante);
+		debitar(remessa, depositante, beneficiario.getTipoPessoa());
 		creditar(remessa, beneficiario);
 		
 				
@@ -251,52 +251,86 @@ public class RemessaService extends ServiceBase {
 	}
 	
 	/**
-	 * Metodo responsavel debitar o valor na conta do depositante
+	 * Metodo responsavel por implementar as regrad de negocio e debitar e acionar a operacao de debito
 	 * para realizar a remessa
 	 * @param Remessa remessa, Cliente beneficiario
 	 * @throws NegocioException 
 	 */
-	public void debitar(Remessa remessa, Cliente depositante) throws NegocioException {
+	public void debitar(Remessa remessa, Cliente depositante, String tipoPessoaBeneficiario) throws NegocioException {
 		BigDecimal valorBase = new BigDecimal(remessa.getValor().replace(",", "."));
-		BigDecimal valorAtual = new BigDecimal(0);
-		
+				
 		if(depositante.getTipoPessoa().equals(PESSOA_FISICA)) {			
-			//Regra de Negocio : Validar se o usuário tem saldo antes da remessa.					
-			if(depositante.getCarteiraPF().getValor().doubleValue() >  valorBase.doubleValue()) {
-				//Regra de Negocio : PF’s possuem um limite de 10 mil reais transacionados por dia.
+			//Regra de Negocio 01 : Validar se o usuário tem saldo antes da remessa.					
+			if(depositante.getCarteiraPF().getValor().doubleValue() >  valorBase.doubleValue()) {				
+				
+				//Regra de Negocio 02 : Não há restrição de remessa entre PF’s e PJ’s e vice-versa.
 				BigDecimal valorAcumulado = depositante.getCarteiraPF().getAcumuladoDia();
 				valorAcumulado = valorAcumulado.add(valorBase);
-				if(valorAcumulado.doubleValue() <= LIMITE_DIARIO_PF && valorBase.doubleValue() <= LIMITE_DIARIO_PF) {										
-					valorAtual = depositante.getCarteiraPF().getValor().subtract(valorBase);
-					depositante.getCarteiraPF().setValor(valorAtual);
-					depositante.getCarteiraPF().setAcumuladoDia(valorAcumulado);														
-					carteiraPfRepository.save(depositante.getCarteiraPF());					
-				}else {
-					throw new NegocioException("O depositante ( "+ depositante.getPessoaFisica().getNome() +" ) excedeu seu limite de transação de 10 mil reais no dia.");
-				}			
-			}else {
+				if(tipoPessoaBeneficiario.equals(PESSOA_FISICA)) {
+					
+					//Regra de Negocio 03: PF’s possuem um limite de 10 mil reais transacionados por dia.
+					if(valorAcumulado.doubleValue() <= LIMITE_DIARIO_PF && valorBase.doubleValue() <= LIMITE_DIARIO_PF) {										
+						debitarPessoaFisica(depositante.getCarteiraPF(), valorBase, valorAcumulado);					
+					}else {//Regra de Negocio 03
+						throw new NegocioException("O depositante ( "+ depositante.getPessoaFisica().getNome() +" ) excedeu seu limite de transação de 10 mil reais no dia.");
+					}
+					
+				}else {//Regra de Negocio 02
+					debitarPessoaFisica(depositante.getCarteiraPF(), valorBase, valorAcumulado);	
+				}
+				
+			}else {//Regra de Negocio 01
 				 throw new NegocioException("O depositante ( "+ depositante.getPessoaFisica().getNome() +" ) não tem saldo para realizar a remessa de "+ valorBase.doubleValue());
 			}
 			
 		}else {
-			//Regra de Negocio : Validar se o usuário tem saldo antes da remessa.
+			//Regra de Negocio 01: Validar se o usuário tem saldo antes da remessa.
 			if(depositante.getCarteiraPJ().getValor().doubleValue() > valorBase.doubleValue()) {
-				//Regra de Negocio : PF’s possuem um limite de 50 mil reais transacionados por dia.
+				
+				//Regra de Negocio 02 : Não há restrição de remessa entre PF’s e PJ’s e vice-versa.
 				BigDecimal valorAcumulado = depositante.getCarteiraPJ().getAcumuladoDia();
 				valorAcumulado = valorAcumulado.add(valorBase);
-				if(valorAcumulado.doubleValue() <= LIMITE_DIARIO_PJ && valorBase.doubleValue() <= LIMITE_DIARIO_PJ) {					
-					valorAtual = depositante.getCarteiraPJ().getValor().subtract(valorBase);
-					depositante.getCarteiraPJ().setValor(valorAtual);
-					depositante.getCarteiraPJ().setAcumuladoDia(valorAcumulado);					
-					carteiraPjRepository.save(depositante.getCarteiraPJ());
-				}else {
-					throw new NegocioException("O depositante ( "+ depositante.getPessoaJuridica().getNome() +" ) excedeu seu limite de transação de 50 mil reais no dia.");
+				if(tipoPessoaBeneficiario.equals(PESSOA_JURIDICA)) {
+					
+					//Regra de Negocio 03: PF’s possuem um limite de 50 mil reais transacionados por dia.
+					if(valorAcumulado.doubleValue() <= LIMITE_DIARIO_PJ && valorBase.doubleValue() <= LIMITE_DIARIO_PJ) {					
+						debitarPessoaJuridica(depositante.getCarteiraPJ(), valorBase, valorAcumulado);
+					}else {//Regra de Negocio 03
+						throw new NegocioException("O depositante ( "+ depositante.getPessoaJuridica().getNome() +" ) excedeu seu limite de transação de 50 mil reais no dia.");
+					}
+					
+				}else {//Regra de Negocio 02
+					debitarPessoaJuridica(depositante.getCarteiraPJ(), valorBase, valorAcumulado);
 				}
-			}else {
+					
+			}else {//Regra de Negocio 01:
 				throw new NegocioException("O depositante ( "+ depositante.getPessoaJuridica().getNome() +" ) não tem saldo para realizar a remessa de "+ valorBase.doubleValue());
-			}
-			
+			}		
 		}		
+	}
+
+	/**
+	 * Metodo responsavel por implementar a operacao de debitar na carteira da pessoa juridica
+	 * @param Cliente depositante, BigDecimal valorBase, BigDecimal valorAcumulado
+	 */
+	private void debitarPessoaJuridica(CarteiraJuridica carteiraPJ, BigDecimal valorBase, BigDecimal valorAcumulado) {
+		BigDecimal valorAtual;
+		valorAtual = carteiraPJ.getValor().subtract(valorBase);
+		carteiraPJ.setValor(valorAtual);
+		carteiraPJ.setAcumuladoDia(valorAcumulado);					
+		carteiraPjRepository.save(carteiraPJ);
+	}
+
+	/**
+	 * Metodo responsavel por implementar a operacao de debitar na carteira da pessoa fisica
+	 * @param Cliente depositante, BigDecimal valorBase, BigDecimal valorAcumulado
+	 */
+	private void debitarPessoaFisica(CarteiraFisica carteiraPF, BigDecimal valorBase, BigDecimal valorAcumulado) {
+		BigDecimal valorAtual;
+		valorAtual = carteiraPF.getValor().subtract(valorBase);
+		carteiraPF.setValor(valorAtual);
+		carteiraPF.setAcumuladoDia(valorAcumulado);														
+		carteiraPfRepository.save(carteiraPF);
 	}
 	
 	/**
