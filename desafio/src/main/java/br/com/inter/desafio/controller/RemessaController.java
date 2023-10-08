@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import br.com.inter.desafio.dto.Entrada;
 import br.com.inter.desafio.dto.Retorno;
+import br.com.inter.desafio.excecao.CotacaoException;
 import br.com.inter.desafio.excecao.NegocioException;
 import br.com.inter.desafio.service.RemessaService;
 
@@ -54,7 +55,9 @@ public class RemessaController extends ControllerBase {
         	 return retorno;
          } catch(NegocioException e) {           
              return montarMensagemErro(PATH_WS, e.getMessage());
-         } catch(Exception e) {
+         }catch(CotacaoException e) {           
+             return montarMensagemErro(PATH_WS, e.getMessage());
+         }catch(Exception e) {
              e.printStackTrace();
              return montarMensagemErro(PATH_WS, "Ocorreu um erro inesperado! Entre em contato com o administrador do sistema.");
          }

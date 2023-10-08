@@ -487,3 +487,18 @@ Caused by: java.lang.StringIndexOutOfBoundsException: String index out of range:
 	at org.h2.util.DateTimeUtils.parseTimestamp(DateTimeUtils.java:338)
 	at org.h2.value.ValueTimestamp.parse(ValueTimestamp.java:86)
 	... 54 more
+2023-10-08 11:25:53 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "SELECT * FROM PESSOA_JURIDICA PESSOA_JURIDICA [*]CARTEIRA_JURIDICA"; SQL statement:
+SELECT * FROM PESSOA_JURIDICA PESSOA_JURIDICA CARTEIRA_JURIDICA [42000-214]
+2023-10-08 11:26:39 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLDataException: Data conversion error converting "'' (CARTEIRA_JURIDICA: ""ACUMULADO_DIA"" NUMERIC(38, 2))"; SQL statement:
+INSERT INTO "PUBLIC"."CARTEIRA_JURIDICA"("ID","MOEDA","VALOR","PESSOA_JURIDICA","ACUMULADO_DIA","ULTIMA_TRANSACAO")VALUES(?,?,?,?,?,?) [22018-214]
+2023-10-08 11:26:39 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLDataException: Data conversion error converting "'' (CARTEIRA_JURIDICA: ""ACUMULADO_DIA"" NUMERIC(38, 2))"; SQL statement:
+INSERT INTO "PUBLIC"."CARTEIRA_JURIDICA"("ID","MOEDA","VALOR","PESSOA_JURIDICA","ACUMULADO_DIA","ULTIMA_TRANSACAO")VALUES(?,?,?,?,?,?) [22018-214]
+2023-10-08 11:27:19 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLDataException: Data conversion error converting "'' (CARTEIRA_JURIDICA: ""ACUMULADO_DIA"" NUMERIC(38, 2))"; SQL statement:
+INSERT INTO "PUBLIC"."CARTEIRA_JURIDICA"("ID","MOEDA","VALOR","PESSOA_JURIDICA","ACUMULADO_DIA","ULTIMA_TRANSACAO")VALUES(?,?,?,?,?,?) [22018-214]
+2023-10-08 11:27:19 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLDataException: Data conversion error converting "'' (CARTEIRA_JURIDICA: ""ACUMULADO_DIA"" NUMERIC(38, 2))"; SQL statement:
+INSERT INTO "PUBLIC"."CARTEIRA_JURIDICA"("ID","MOEDA","VALOR","PESSOA_JURIDICA","ACUMULADO_DIA","ULTIMA_TRANSACAO")VALUES(?,?,?,?,?,?) [22018-214]

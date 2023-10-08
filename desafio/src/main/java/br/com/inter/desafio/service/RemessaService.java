@@ -8,6 +8,7 @@ import java.util.Date;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.ResourceAccessException;
 
 import br.com.inter.desafio.dto.Cliente;
 import br.com.inter.desafio.dto.Cotacao;
@@ -16,6 +17,7 @@ import br.com.inter.desafio.entity.CarteiraFisica;
 import br.com.inter.desafio.entity.CarteiraJuridica;
 import br.com.inter.desafio.entity.PessoaFisica;
 import br.com.inter.desafio.entity.PessoaJuridica;
+import br.com.inter.desafio.excecao.CotacaoException;
 import br.com.inter.desafio.excecao.NegocioException;
 import br.com.inter.desafio.repository.CarteiraFisicaRepository;
 import br.com.inter.desafio.repository.CarteiraJuridicaRepository;
@@ -31,6 +33,10 @@ import jakarta.transaction.Transactional.TxType;
  */
 @Service
 public class RemessaService extends ServiceBase {
+
+	private static final int LIMITE_DIARIO_PJ = 50000;
+
+	private static final int LIMITE_DIARIO_PF = 10000;
 
 	private static final int HTTP_CODE_SUCESSO = 200;
 
@@ -60,9 +66,10 @@ public class RemessaService extends ServiceBase {
 	 * @return String 
 	 * @throws NegocioException 
 	 * @throws ParseException 
+	 * @throws CotacaoException 
 	 */
 	@Transactional(value = TxType.REQUIRED)
-	public String efetuarRemessa(Remessa remessa) throws NegocioException, ParseException {
+	public String efetuarRemessa(Remessa remessa) throws NegocioException, ParseException, CotacaoException {
 		
 		Cliente depositante = enriquecerDepositante(remessa);
 		Cliente beneficiario = enriquecerBeneficiario(remessa);
@@ -86,26 +93,32 @@ public class RemessaService extends ServiceBase {
 	 * para realizar a remessa
 	 * @param Remessa remessa
 	 * @return String 
+	 * @throws CotacaoException 
 	 */
 	@SuppressWarnings("deprecation")
-	private BigDecimal obterCotacao() {
-		BigDecimal cotacaoDecimal = new BigDecimal(0);
-		
-		String url = "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarDia(dataCotacao=@dataCotacao)?@dataCotacao='"
-				+ "05-10-2023" //TODO : mudar para a data atual
-				+ "'&$top=10&$skip=0&$format=json&$select=cotacaoCompra";
-		
-		ResponseEntity<String> response = executarRequisicaoGet(url, null);
-		
-		if(response.getStatusCodeValue()==HTTP_CODE_SUCESSO ) {				
-			Cotacao cotacao = gson.fromJson(response.getBody(), Cotacao.class);
-			if(cotacao != null) {							
-				cotacaoDecimal = new BigDecimal(cotacao.getValue().get(0).getCotacaoCompra().toString());				
-			}
-		}else {
-			//TODO : levantar exceção
+	private BigDecimal obterCotacao() throws CotacaoException {
+		BigDecimal cotacaoDecimal = new BigDecimal(4.95);// TODO : voltar para zero, apos a api voltar (timeout) 
+		try {
 			
+			String url = "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarDia(dataCotacao=@dataCotacao)?@dataCotacao='"
+					+ "05-10-2023" //TODO : mudar para a data atual
+					+ "'&$top=10&$skip=0&$format=json&$select=cotacaoCompra";
+			
+			/*ResponseEntity<String> response = executarRequisicaoGet(url, null);
+			
+			if(response.getStatusCodeValue()==HTTP_CODE_SUCESSO ) {				
+				Cotacao cotacao = gson.fromJson(response.getBody(), Cotacao.class);
+				if(cotacao != null) {							
+					cotacaoDecimal = new BigDecimal(cotacao.getValue().get(0).getCotacaoCompra().toString());				
+				}
+			}else {
+				log.error(response.getStatusCodeValue() + " - " + response.getBody());
+				throw new CotacaoException(response.getStatusCodeValue() + " - " + response.getBody());
+			}*/
+		}catch (ResourceAccessException e) {
+			throw new CotacaoException("Não possível realizar a remessa, pois o sistema de Cotação está indisponível.");
 		}
+		
 		return cotacaoDecimal;
 	}
 	
@@ -187,8 +200,8 @@ public class RemessaService extends ServiceBase {
 			
 			//Regra de Negocio: PJ’s possuem um limite de 50 mil reais transacionados por dia.
 			atualizaDataUltimaTransacaoPJ(carteiraDepositantePJ);
-			if(carteiraDepositantePF.getAcumuladoDia() == null) {
-				carteiraDepositantePF.setAcumuladoDia(new BigDecimal(0));
+			if(carteiraDepositantePJ.getAcumuladoDia() == null) {
+				carteiraDepositantePJ.setAcumuladoDia(new BigDecimal(0));
 			}
 			
 			depositante.setPessoaJuridica(depositantePJ);
@@ -247,13 +260,20 @@ public class RemessaService extends ServiceBase {
 		BigDecimal valorBase = new BigDecimal(remessa.getValor().replace(",", "."));
 		BigDecimal valorAtual = new BigDecimal(0);
 		
-		if(depositante.getTipoPessoa().equals(PESSOA_FISICA)) {
-			
-			//Regra de Negocio : Validar se o usuário tem saldo antes da remessa.
+		if(depositante.getTipoPessoa().equals(PESSOA_FISICA)) {			
+			//Regra de Negocio : Validar se o usuário tem saldo antes da remessa.					
 			if(depositante.getCarteiraPF().getValor().doubleValue() >  valorBase.doubleValue()) {
-				valorAtual = depositante.getCarteiraPF().getValor().subtract(valorBase);
-				depositante.getCarteiraPF().setValor(valorAtual);
-				carteiraPfRepository.save(depositante.getCarteiraPF());				
+				//Regra de Negocio : PF’s possuem um limite de 10 mil reais transacionados por dia.
+				BigDecimal valorAcumulado = depositante.getCarteiraPF().getAcumuladoDia();
+				valorAcumulado = valorAcumulado.add(valorBase);
+				if(valorAcumulado.doubleValue() <= LIMITE_DIARIO_PF && valorBase.doubleValue() <= LIMITE_DIARIO_PF) {										
+					valorAtual = depositante.getCarteiraPF().getValor().subtract(valorBase);
+					depositante.getCarteiraPF().setValor(valorAtual);
+					depositante.getCarteiraPF().setAcumuladoDia(valorAcumulado);														
+					carteiraPfRepository.save(depositante.getCarteiraPF());					
+				}else {
+					throw new NegocioException("O depositante ( "+ depositante.getPessoaFisica().getNome() +" ) excedeu seu limite de transação de 10 mil reais no dia.");
+				}			
 			}else {
 				 throw new NegocioException("O depositante ( "+ depositante.getPessoaFisica().getNome() +" ) não tem saldo para realizar a remessa de "+ valorBase.doubleValue());
 			}
@@ -261,9 +281,17 @@ public class RemessaService extends ServiceBase {
 		}else {
 			//Regra de Negocio : Validar se o usuário tem saldo antes da remessa.
 			if(depositante.getCarteiraPJ().getValor().doubleValue() > valorBase.doubleValue()) {
-				valorAtual = depositante.getCarteiraPJ().getValor().subtract(valorBase);
-				depositante.getCarteiraPJ().setValor(valorAtual);
-				carteiraPjRepository.save(depositante.getCarteiraPJ());
+				//Regra de Negocio : PF’s possuem um limite de 50 mil reais transacionados por dia.
+				BigDecimal valorAcumulado = depositante.getCarteiraPJ().getAcumuladoDia();
+				valorAcumulado = valorAcumulado.add(valorBase);
+				if(valorAcumulado.doubleValue() <= LIMITE_DIARIO_PJ && valorBase.doubleValue() <= LIMITE_DIARIO_PJ) {					
+					valorAtual = depositante.getCarteiraPJ().getValor().subtract(valorBase);
+					depositante.getCarteiraPJ().setValor(valorAtual);
+					depositante.getCarteiraPJ().setAcumuladoDia(valorAcumulado);					
+					carteiraPjRepository.save(depositante.getCarteiraPJ());
+				}else {
+					throw new NegocioException("O depositante ( "+ depositante.getPessoaJuridica().getNome() +" ) excedeu seu limite de transação de 50 mil reais no dia.");
+				}
 			}else {
 				throw new NegocioException("O depositante ( "+ depositante.getPessoaJuridica().getNome() +" ) não tem saldo para realizar a remessa de "+ valorBase.doubleValue());
 			}
