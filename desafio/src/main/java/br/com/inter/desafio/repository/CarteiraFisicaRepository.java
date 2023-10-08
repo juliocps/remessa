@@ -1,5 +1,6 @@
 package br.com.inter.desafio.repository;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -12,6 +13,7 @@ import br.com.inter.desafio.entity.PessoaFisica;
  */
 public interface CarteiraFisicaRepository  extends JpaRepository<CarteiraFisica, Long> {
 	
+	@Cacheable("carteiraFisica")
 	@Query("SELECT c FROM CarteiraFisica c WHERE c.pessoaFisica = :pf and c.moeda = :moeda")
 	public CarteiraFisica buscarCarteiraPessoaFisica(PessoaFisica pf, String moeda);
 	
