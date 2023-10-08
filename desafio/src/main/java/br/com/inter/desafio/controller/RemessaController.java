@@ -26,6 +26,7 @@ public class RemessaController extends ControllerBase {
 	private static final int TAMANHO_CNPJ = 14;
 	private static final int TAMANHO_CPF = 11;
 	private static final int TAMANHO_CENTAVOS = 2;
+	
 	@Autowired
 	RemessaService remessaService;
 	

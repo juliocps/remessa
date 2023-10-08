@@ -1,0 +1,66 @@
+{
+	"info": {
+		"_postman_id": "664f1193-d3d6-418f-8a36-dcbf5b20b106",
+		"name": "Desafio",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "29854841"
+	},
+	"item": [
+		{
+			"name": "Remessa PF",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"remessa\":{\"depositante\":\"33333333333\",\"beneficiario\":\"44444444444\",\"valor\":\"25,00\"},\"dataEvento\":\"06/10/2023 20:20\",\"responsavel\":\"Julio\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/remessa",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"remessa"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Remessa PJ",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"remessa\":{\"depositante\":\"00416968000101\",\"beneficiario\":\"92693118000101\",\"valor\":\"1000,00\"},\"dataEvento\":\"06/10/2023 20:20\",\"responsavel\":\"Julio\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/remessa",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"remessa"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
