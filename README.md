@@ -61,6 +61,17 @@ Postman
 ------------
 ### Inicialização
 
+######  (Recomendada) - Usando Docker
+
+Caso tenha o Docker instalado siga os passo:
+
+Baixar o projeto no Git ( clone )
+Acessar a pasta do projeto: " .\git\remessa\desafio> "
+Rodar o comando: docker-compose up -d --build
+Verificar na interface grafica do Docker
+
+###### Outra opção
+
 1 - Clonar o projeto no github e abrir no Spring Tools Suite 4
 
 2 - Clicar com o botão direito no projeto desafio
@@ -82,15 +93,6 @@ Postman
 10 - Clicar em start
 
 
-Ou
-
-
-1 - Acessar o seu maven via linha de comandos
-
-2 - Executar o comando mvn install na pasta do projeto
-
-3 - Executar o comando  java -jar desafio-0.0.1-SNAPSHOT.jar
-
 
 ###### Rodandos os testes
 
@@ -107,6 +109,13 @@ Usando o Maven externo:
 1 - Acessar o seu maven via linha de comandos
 
 2 - Executar o comando mvn test na pasta do projeto
+
+
+Teste de Carga / Stress:
+
+Baixe o Jmeter ( https://jmeter.apache.org/download_jmeter.cgi )
+Importe o arquivo jmx dentro do caminho .\git\remessa\desafio\src\main\resources\jmeter\inter.jmx
+Execute o plano de testes
 
 
 ###### Para acessar a documentação da API
