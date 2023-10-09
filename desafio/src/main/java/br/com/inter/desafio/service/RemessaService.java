@@ -4,7 +4,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.GregorianCalendar;
 
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -93,14 +95,18 @@ public class RemessaService extends ServiceBase {
 	 */
 	@SuppressWarnings("deprecation")
 	private BigDecimal obterCotacao() throws CotacaoException {
-		BigDecimal cotacaoDecimal = new BigDecimal(4.95);// TODO : voltar para zero, apos a api voltar (timeout) 
+		BigDecimal cotacaoDecimal = new BigDecimal(0);
 		try {
 			
+			Date date = new GregorianCalendar().getTime();
+		    Date dataCotacao = DateUtils.addDays(date, -1);		    
+			String dataCotacaoTexto = sdf.format(dataCotacao);
+			
 			String url = "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarDia(dataCotacao=@dataCotacao)?@dataCotacao='"
-					+ "05-10-2023" //TODO : mudar para a data atual
+					+ dataCotacaoTexto 
 					+ "'&$top=10&$skip=0&$format=json&$select=cotacaoCompra";
 			
-			/*ResponseEntity<String> response = executarRequisicaoGet(url, null);
+			ResponseEntity<String> response = executarRequisicaoGet(url, null);
 			
 			if(response.getStatusCodeValue()==HTTP_CODE_SUCESSO ) {				
 				Cotacao cotacao = gson.fromJson(response.getBody(), Cotacao.class);
@@ -110,7 +116,7 @@ public class RemessaService extends ServiceBase {
 			}else {
 				log.error(response.getStatusCodeValue() + " - " + response.getBody());
 				throw new CotacaoException(response.getStatusCodeValue() + " - " + response.getBody());
-			}*/
+			}
 		}catch (ResourceAccessException e) {
 			throw new CotacaoException("Não possível realizar a remessa, pois o sistema de Cotação está indisponível.");
 		}
