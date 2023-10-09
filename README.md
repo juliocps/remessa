@@ -63,12 +63,17 @@ Postman
 
 ######  (Recomendada) - Usando Docker
 
+
 Caso tenha o Docker instalado siga os passo:
 
 Baixar o projeto no Git ( clone )
+
 Acessar a pasta do projeto: " .\git\remessa\desafio> "
+
 Rodar o comando: docker-compose up -d --build
+
 Verificar na interface grafica do Docker
+
 
 ###### Outra opção
 
@@ -114,8 +119,11 @@ Usando o Maven externo:
 Teste de Carga / Stress:
 
 Baixe o Jmeter ( https://jmeter.apache.org/download_jmeter.cgi )
+
 Importe o arquivo jmx dentro do caminho .\git\remessa\desafio\src\main\resources\jmeter\inter.jmx
+
 Execute o plano de testes
+
 
 
 ###### Para acessar a documentação da API
