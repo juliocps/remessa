@@ -140,13 +140,6 @@ http://localhost:8080/swagger-ui/index.html
 
 Monitoramento com Pinpoint API
 
-Teste de Integração
-
-Teste de Stress
-
-Docker
-
-
 ------------
 ### Colaboradores
 
@@ -155,4 +148,4 @@ Docker
 ------------
 ### Status do projeto
 
-###### Em andamento
+###### FINALIZADO
