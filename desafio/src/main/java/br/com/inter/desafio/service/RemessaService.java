@@ -239,14 +239,20 @@ public class RemessaService extends ServiceBase {
 	 */
 	private void atualizaDataUltimaTransacaoPJ(CarteiraJuridica carteiraDepositantePJ) throws ParseException {
 		if(carteiraDepositantePJ.getUltimaTransacao() != null ){				
-			
-			Date dataBanco = sdf.parse(sdf.format(carteiraDepositantePJ.getUltimaTransacao())); 
-			Date hoje = sdf.parse(sdf.format(dataAtual)); 
-							            
-			if(dataBanco.before(hoje)){
+			try {
+				
+				Date dataBanco = sdf.parse(sdf.format(carteiraDepositantePJ.getUltimaTransacao())); 
+				Date hoje = sdf.parse(sdf.format(dataAtual)); 
+				
+				if(dataBanco.before(hoje)){
+					carteiraDepositantePJ.setUltimaTransacao(new Date());
+					carteiraDepositantePJ.setAcumuladoDia(new BigDecimal(0));
+				}					            
+			}catch (NumberFormatException e) {
+				// TODO: zera tudo (analisar alto volume)
 				carteiraDepositantePJ.setUltimaTransacao(new Date());
 				carteiraDepositantePJ.setAcumuladoDia(new BigDecimal(0));
-			}					            
+			}
 		}else {				
 			carteiraDepositantePJ.setUltimaTransacao(new Date());
 		}
